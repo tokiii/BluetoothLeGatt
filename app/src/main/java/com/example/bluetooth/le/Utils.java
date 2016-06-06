@@ -31,116 +31,122 @@ import java.util.List;
 public class Utils {
 
     private static HashMap<Integer, String> serviceTypes = new HashMap();
+
     static {
         // Sample Services.
-    	serviceTypes.put(BluetoothGattService.SERVICE_TYPE_PRIMARY, "PRIMARY");
-    	serviceTypes.put(BluetoothGattService.SERVICE_TYPE_SECONDARY, "SECONDARY");
+        serviceTypes.put(BluetoothGattService.SERVICE_TYPE_PRIMARY, "PRIMARY");
+        serviceTypes.put(BluetoothGattService.SERVICE_TYPE_SECONDARY, "SECONDARY");
     }
-    
-    public static String getServiceType(int type){
-    	return serviceTypes.get(type);
+
+    public static String getServiceType(int type) {
+        return serviceTypes.get(type);
     }
-    
+
 
     //-------------------------------------------    
     private static HashMap<Integer, String> charPermissions = new HashMap();
+
     static {
-    	charPermissions.put(0, "UNKNOW");
-    	charPermissions.put(BluetoothGattCharacteristic.PERMISSION_READ, "READ");
-    	charPermissions.put(BluetoothGattCharacteristic.PERMISSION_READ_ENCRYPTED, "READ_ENCRYPTED");
-    	charPermissions.put(BluetoothGattCharacteristic.PERMISSION_READ_ENCRYPTED_MITM, "READ_ENCRYPTED_MITM");
-    	charPermissions.put(BluetoothGattCharacteristic.PERMISSION_WRITE, "WRITE");
-    	charPermissions.put(BluetoothGattCharacteristic.PERMISSION_WRITE_ENCRYPTED, "WRITE_ENCRYPTED");
-    	charPermissions.put(BluetoothGattCharacteristic.PERMISSION_WRITE_ENCRYPTED_MITM, "WRITE_ENCRYPTED_MITM");
-    	charPermissions.put(BluetoothGattCharacteristic.PERMISSION_WRITE_SIGNED, "WRITE_SIGNED");
-    	charPermissions.put(BluetoothGattCharacteristic.PERMISSION_WRITE_SIGNED_MITM, "WRITE_SIGNED_MITM");	
+        charPermissions.put(0, "UNKNOW");
+        charPermissions.put(BluetoothGattCharacteristic.PERMISSION_READ, "READ");
+        charPermissions.put(BluetoothGattCharacteristic.PERMISSION_READ_ENCRYPTED, "READ_ENCRYPTED");
+        charPermissions.put(BluetoothGattCharacteristic.PERMISSION_READ_ENCRYPTED_MITM, "READ_ENCRYPTED_MITM");
+        charPermissions.put(BluetoothGattCharacteristic.PERMISSION_WRITE, "WRITE");
+        charPermissions.put(BluetoothGattCharacteristic.PERMISSION_WRITE_ENCRYPTED, "WRITE_ENCRYPTED");
+        charPermissions.put(BluetoothGattCharacteristic.PERMISSION_WRITE_ENCRYPTED_MITM, "WRITE_ENCRYPTED_MITM");
+        charPermissions.put(BluetoothGattCharacteristic.PERMISSION_WRITE_SIGNED, "WRITE_SIGNED");
+        charPermissions.put(BluetoothGattCharacteristic.PERMISSION_WRITE_SIGNED_MITM, "WRITE_SIGNED_MITM");
     }
-    
-    public static String getCharPermission(int permission){
-    	return getHashMapValue(charPermissions,permission);
+
+    public static String getCharPermission(int permission) {
+        return getHashMapValue(charPermissions, permission);
     }
-    //-------------------------------------------    
+
+    //-------------------------------------------
     private static HashMap<Integer, String> charProperties = new HashMap();
+
     static {
-    	
-    	charProperties.put(BluetoothGattCharacteristic.PROPERTY_BROADCAST, "BROADCAST");
-    	charProperties.put(BluetoothGattCharacteristic.PROPERTY_EXTENDED_PROPS, "EXTENDED_PROPS");
-    	charProperties.put(BluetoothGattCharacteristic.PROPERTY_INDICATE, "INDICATE");
-    	charProperties.put(BluetoothGattCharacteristic.PROPERTY_NOTIFY, "NOTIFY");
-    	charProperties.put(BluetoothGattCharacteristic.PROPERTY_READ, "READ");
-    	charProperties.put(BluetoothGattCharacteristic.PROPERTY_SIGNED_WRITE, "SIGNED_WRITE");
-    	charProperties.put(BluetoothGattCharacteristic.PROPERTY_WRITE, "WRITE");
-    	charProperties.put(BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE, "WRITE_NO_RESPONSE");
+
+        charProperties.put(BluetoothGattCharacteristic.PROPERTY_BROADCAST, "BROADCAST");
+        charProperties.put(BluetoothGattCharacteristic.PROPERTY_EXTENDED_PROPS, "EXTENDED_PROPS");
+        charProperties.put(BluetoothGattCharacteristic.PROPERTY_INDICATE, "INDICATE");
+        charProperties.put(BluetoothGattCharacteristic.PROPERTY_NOTIFY, "NOTIFY");
+        charProperties.put(BluetoothGattCharacteristic.PROPERTY_READ, "READ");
+        charProperties.put(BluetoothGattCharacteristic.PROPERTY_SIGNED_WRITE, "SIGNED_WRITE");
+        charProperties.put(BluetoothGattCharacteristic.PROPERTY_WRITE, "WRITE");
+        charProperties.put(BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE, "WRITE_NO_RESPONSE");
     }
-    
-    public static String getCharPropertie(int property){
-    	return getHashMapValue(charProperties,property);
+
+    public static String getCharPropertie(int property) {
+        return getHashMapValue(charProperties, property);
     }
-    
+
     //--------------------------------------------------------------------------
     private static HashMap<Integer, String> descPermissions = new HashMap();
+
     static {
-    	descPermissions.put(0, "UNKNOW");
-    	descPermissions.put(BluetoothGattDescriptor.PERMISSION_READ, "READ");
-    	descPermissions.put(BluetoothGattDescriptor.PERMISSION_READ_ENCRYPTED, "READ_ENCRYPTED");
-    	descPermissions.put(BluetoothGattDescriptor.PERMISSION_READ_ENCRYPTED_MITM, "READ_ENCRYPTED_MITM");
-    	descPermissions.put(BluetoothGattDescriptor.PERMISSION_WRITE, "WRITE");
-    	descPermissions.put(BluetoothGattDescriptor.PERMISSION_WRITE_ENCRYPTED, "WRITE_ENCRYPTED");
-    	descPermissions.put(BluetoothGattDescriptor.PERMISSION_WRITE_ENCRYPTED_MITM, "WRITE_ENCRYPTED_MITM");
-    	descPermissions.put(BluetoothGattDescriptor.PERMISSION_WRITE_SIGNED, "WRITE_SIGNED");
-    	descPermissions.put(BluetoothGattDescriptor.PERMISSION_WRITE_SIGNED_MITM, "WRITE_SIGNED_MITM");
+        descPermissions.put(0, "UNKNOW");
+        descPermissions.put(BluetoothGattDescriptor.PERMISSION_READ, "READ");
+        descPermissions.put(BluetoothGattDescriptor.PERMISSION_READ_ENCRYPTED, "READ_ENCRYPTED");
+        descPermissions.put(BluetoothGattDescriptor.PERMISSION_READ_ENCRYPTED_MITM, "READ_ENCRYPTED_MITM");
+        descPermissions.put(BluetoothGattDescriptor.PERMISSION_WRITE, "WRITE");
+        descPermissions.put(BluetoothGattDescriptor.PERMISSION_WRITE_ENCRYPTED, "WRITE_ENCRYPTED");
+        descPermissions.put(BluetoothGattDescriptor.PERMISSION_WRITE_ENCRYPTED_MITM, "WRITE_ENCRYPTED_MITM");
+        descPermissions.put(BluetoothGattDescriptor.PERMISSION_WRITE_SIGNED, "WRITE_SIGNED");
+        descPermissions.put(BluetoothGattDescriptor.PERMISSION_WRITE_SIGNED_MITM, "WRITE_SIGNED_MITM");
     }
-    
-    public static String getDescPermission(int property){
-    	return getHashMapValue(descPermissions,property);
+
+    public static String getDescPermission(int property) {
+        return getHashMapValue(descPermissions, property);
     }
-    
-    
-    private static String getHashMapValue(HashMap<Integer, String> hashMap,int number){
-    	String result =hashMap.get(number);
-    	if(TextUtils.isEmpty(result)){
-    		List<Integer> numbers = getElement(number);
-    		result="";
-    		for(int i=0;i<numbers.size();i++){
-    			result+=hashMap.get(numbers.get(i))+"|";
-    		}
-    	}
-    	return result;
+
+
+    private static String getHashMapValue(HashMap<Integer, String> hashMap, int number) {
+        String result = hashMap.get(number);
+        if (TextUtils.isEmpty(result)) {
+            List<Integer> numbers = getElement(number);
+            result = "";
+            for (int i = 0; i < numbers.size(); i++) {
+                result += hashMap.get(numbers.get(i)) + "|";
+            }
+        }
+        return result;
     }
 
     /**
      * 位运算结果的反推函数10 -> 2 | 8;
      */
-    static private List<Integer> getElement(int number){
-    	List<Integer> result = new ArrayList<Integer>();
-        for (int i = 0; i < 32; i++){
+    static private List<Integer> getElement(int number) {
+        List<Integer> result = new ArrayList<Integer>();
+        for (int i = 0; i < 32; i++) {
             int b = 1 << i;
-            if ((number & b) > 0) 
-            	result.add(b);
+            if ((number & b) > 0)
+                result.add(b);
         }
-        
+
         return result;
     }
-    
-    
-    public static String bytesToHexString(byte[] src){  
-        StringBuilder stringBuilder = new StringBuilder("");  
-        if (src == null || src.length <= 0) {  
-            return null;  
-        }  
-        for (int i = 0; i < src.length; i++) {  
-            int v = src[i] & 0xFF;  
-            String hv = Integer.toHexString(v);  
-            if (hv.length() < 2) {  
-                stringBuilder.append(0);  
-            }  
-            stringBuilder.append(hv);  
-        }  
-        return stringBuilder.toString();  
+
+
+    public static String bytesToHexString(byte[] src) {
+        StringBuilder stringBuilder = new StringBuilder("");
+        if (src == null || src.length <= 0) {
+            return null;
+        }
+        for (int i = 0; i < src.length; i++) {
+            int v = src[i] & 0xFF;
+            String hv = Integer.toHexString(v);
+            if (hv.length() < 2) {
+                stringBuilder.append(0);
+            }
+            stringBuilder.append(hv);
+        }
+        return stringBuilder.toString();
     }
 
     /**
      * 转换成16进制
+     *
      * @param b
      * @return
      */
@@ -169,8 +175,7 @@ public class Utils {
     /**
      * 16进制的字符串表示转成字节数组
      *
-     * @param hexString
-     *          16进制格式的字符串
+     * @param hexString 16进制格式的字符串
      * @return 转换后的字节数组
      **/
     public static byte[] hexStr2ByteArray(String hexString) {
@@ -218,6 +223,7 @@ public class Utils {
 
     /**
      * 16进制字符串转换成byte数组
+     *
      * @return 转换后的byte数组
      */
     public static byte[] hex2Byte(String hex) {
@@ -246,5 +252,36 @@ public class Utils {
             bytes[j] = (byte) Integer.parseInt(hexStr[j], 16);
         }
         return bytes;
+    }
+
+    /**
+     * 自动补全零
+     * @param sourceDate
+     * @param formatLength
+     * @return
+     */
+    public static String frontCompWithZore(int sourceDate, int formatLength) {
+        String newString = String.format("%0" + formatLength + "d", sourceDate);
+        return newString;
+    }
+
+
+    /**
+     * 给字符串补零
+     * @param str
+     * @param strLength
+     * @return
+     */
+    public static String addZeroForNum(String str, int strLength) {
+        int strLen = str.length();
+        StringBuffer sb = null;
+        while (strLen < strLength) {
+            sb = new StringBuffer();
+            sb.append("0").append(str);// 左(前)补0
+            // sb.append(str).append("0");//右(后)补0
+            str = sb.toString();
+            strLen = str.length();
+        }
+        return str;
     }
 }

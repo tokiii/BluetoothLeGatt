@@ -29,6 +29,7 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -41,23 +42,29 @@ import com.example.bluetooth.le.BluetoothLeClass.OnServiceDiscoverListener;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
 
 /**
  * Activity for scanning and displaying available Bluetooth LE devices.
  */
-public class DeviceScanActivity extends Activity implements AdapterView.OnItemClickListener{
-	private final static String TAG = "blueQQQQ";
-	private final static String UUID_KEY_DATA = "0000ff0b-0000-1000-8000-00805f9b34fb";
+public class DeviceScanActivity extends Activity implements AdapterView.OnItemClickListener {
+    private final static String TAG = "blueQQQQ";
+    private final static String UUID_KEY_DATA = "0000ff0b-0000-1000-8000-00805f9b34fb";
     private final static String UUID_KEY_GET = "0000ff0a-0000-1000-8000-00805f9b34fb";
     private final static String UUID_SERVICE = "0000fff0-0000-1000-8000-00805f9b34fb";
 
     private boolean mesured = false;
 
     private LeDeviceListAdapter mLeDeviceListAdapter;
-    /**搜索BLE终端*/
+    /**
+     * 搜索BLE终端
+     */
     private BluetoothAdapter mBluetoothAdapter;
-    /**读写BLE终端*/
+    /**
+     * 读写BLE终端
+     */
     private BluetoothLeClass mBLE;
     private boolean mScanning;
     private Handler mHandler;
@@ -71,12 +78,14 @@ public class DeviceScanActivity extends Activity implements AdapterView.OnItemCl
     private Button bt_send;
     private EditText et_code;
 
+    private List<String> dataList = new ArrayList<String>();
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         getActionBar().setTitle(R.string.title_devices);
         setContentView(R.layout.activity_main);
-        listView = (ListView)findViewById(R.id.listView);
+        listView = (ListView) findViewById(R.id.listView);
         et_code = (EditText) findViewById(R.id.et_code);
         bt_send = (Button) findViewById(R.id.btn_send);
         devices = new ArrayList<BluetoothDevice>();
@@ -85,7 +94,6 @@ public class DeviceScanActivity extends Activity implements AdapterView.OnItemCl
         bt_send.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                setSetting();
             }
         });
         mHandler = new Handler();
@@ -124,9 +132,6 @@ public class DeviceScanActivity extends Activity implements AdapterView.OnItemCl
     }
 
 
-
-
-
     private BluetoothGattCallback gattCallback = new BluetoothGattCallback() {
 
         @Override
@@ -135,10 +140,67 @@ public class DeviceScanActivity extends Activity implements AdapterView.OnItemCl
 
             super.onCharacteristicChanged(gatt, characteristic);
 
-            LogUtils.i("接收到的notify值------>" +characteristic.getUuid() + "-------" + Utils.bytesToHexString(characteristic.getValue()));
+            String receiveStr = Utils.bytesToHexString(characteristic.getValue());
+
+            LogUtils.i("onCharacteristicChanged--接收到的notify值------>" + characteristic.getUuid() + "-------" + Utils.bytesToHexString(characteristic.getValue()));
+
+            // 判断是否可以进行数据传输
+            if (receiveStr.equals("aa0600")) {
+                startWriteData();
+            }
+
+            if (receiveStr.equals("aa0400")) {
+                LogUtils.i("设置时间成功");
+            }
+
+            // 获取历史包大小
+            if (receiveStr.contains("aa01")) {
+                isPrepare = true;
+
+                if (receiveStr.equals("aa010000")) {
+                    LogUtils.i("没有历史数据");
+                } else {
+                    LogUtils.i("得到的历史数据包大小为--->" + receiveStr);
+                    String countStr = receiveStr.substring(6, 8);
+                    LogUtils.i("获得的包的大小为---->" + Integer.parseInt(countStr, 16));
+                    count = Integer.valueOf(Integer.parseInt(countStr, 16));
+                    gethistoryTimer.schedule(new GetHistoryTask(), 0, 1000);
+                }
+
+            }
+
+
+
+            // 接收每个包
+            if (receiveStr.contains("dd")) {
+
+                receiveStr = receiveStr.replace("dd", "");
+
+
+                if (!dataList.contains(receiveStr)) {// 如果不包括，则添加到list
+                    if (receiveStr.length() > 16) {
+                        dataList.add(receiveStr.substring(0, 15));
+                        LogUtils.i("得到的包的字符串1---》" + receiveStr.substring(0, 15));
+                        dataList.add(receiveStr.substring(16, 31));
+                        LogUtils.i("得到的包的字符串2---》" + receiveStr.substring(16, 31));
+                    } else {
+                        dataList.add(receiveStr);
+                        LogUtils.i("得到的包的字符串单包---》" + receiveStr);
+                    }
+
+                }
+
+            }
+
+            LogUtils.i("解析到的包的大小为---->" + dataList.size());
+
+            if (receiveStr.equals("aa0300")) {
+                LogUtils.i("删除成功！");
+            }
+
+
             //收到设备notify值 （设备上报值）
         }
-
 
 
         @Override
@@ -146,7 +208,7 @@ public class DeviceScanActivity extends Activity implements AdapterView.OnItemCl
                                          BluetoothGattCharacteristic characteristic, int status) {
             super.onCharacteristicRead(gatt, characteristic, status);
 
-            LogUtils.i("接收到的notify值------>" +characteristic.getUuid() + "-------" + Utils.bytesToHexString(characteristic.getValue()));
+            LogUtils.i("onCharacteristicRead--接收到的notify值------>" + characteristic.getUuid() + "-------" + Utils.bytesToHexString(characteristic.getValue()));
             //收到设备notify值 （设备上报值）
             //读取到值
 
@@ -158,7 +220,8 @@ public class DeviceScanActivity extends Activity implements AdapterView.OnItemCl
             super.onCharacteristicWrite(gatt, characteristic, status);
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 //write成功（发送值成功）
-                LogUtils.i("发送成功！！！！-----uuid===>" + characteristic.getUuid());
+                LogUtils.i("发送成功-uuid===>" + characteristic.getUuid() + "发送的值---->" + Utils.bytesToHexString(characteristic.getValue()));
+
 
             }
 
@@ -177,15 +240,14 @@ public class DeviceScanActivity extends Activity implements AdapterView.OnItemCl
                     gatt.discoverServices();// 寻找服务
 
 
-
-
-
-
-
                 } else if (newState == BluetoothGatt.STATE_DISCONNECTED) {
                     // 断开连接
 
                     LogUtils.i("断开连接.....");
+                    searchTimer.cancel();
+
+                    isPrepare = false;
+
 
                 }
             }
@@ -225,9 +287,18 @@ public class DeviceScanActivity extends Activity implements AdapterView.OnItemCl
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 //寻找到服务
                 LogUtils.i("寻找到服务！！！");
+                isPrepare = false;
+
+                searchTimer.schedule(timerTask, 0, 1000);
             }
         }
     };
+
+    /**
+     * 开始写入数据
+     */
+    private void startWriteData() {
+    }
 
 
     @Override
@@ -235,7 +306,7 @@ public class DeviceScanActivity extends Activity implements AdapterView.OnItemCl
         super.onResume();
 
         // Initializes list view adapter.
-        mLeDeviceListAdapter = new LeDeviceListAdapter(this,devices );
+        mLeDeviceListAdapter = new LeDeviceListAdapter(this, devices);
 
         listView.setAdapter(mLeDeviceListAdapter);
         scanLeDevice(true);
@@ -254,21 +325,6 @@ public class DeviceScanActivity extends Activity implements AdapterView.OnItemCl
         super.onStop();
         mBLE.close();
     }
-
-  /*  @Override
-    protected void onListItemClick(ListView l, View v, int position, long id) {
-        final BluetoothDevice device = mLeDeviceListAdapter.getDevice(position);
-        if (device == null) return;
-        if (mScanning) {
-            mBluetoothAdapter.stopLeScan(mLeScanCallback);
-            mScanning = false;
-        }
-
-//        mBLE.connect(device.getAddress());
-
-     bluetoothGatt = device.connectGatt(DeviceScanActivity.this, false, gattCallback);
-
-    }*/
 
     private BluetoothGatt bluetoothGatt;
 
@@ -296,12 +352,12 @@ public class DeviceScanActivity extends Activity implements AdapterView.OnItemCl
     /**
      * 搜索到BLE终端服务的事件
      */
-    private BluetoothLeClass.OnServiceDiscoverListener mOnServiceDiscover = new OnServiceDiscoverListener(){
+    private BluetoothLeClass.OnServiceDiscoverListener mOnServiceDiscover = new OnServiceDiscoverListener() {
 
-		@Override
-		public void onServiceDiscover(BluetoothGatt gatt) {
-			displayGattServices(mBLE.getSupportedGattServices());
-		}
+        @Override
+        public void onServiceDiscover(BluetoothGatt gatt) {
+            displayGattServices(mBLE.getSupportedGattServices());
+        }
 
     };
 
@@ -310,79 +366,45 @@ public class DeviceScanActivity extends Activity implements AdapterView.OnItemCl
     private BluetoothAdapter.LeScanCallback mLeScanCallback =
             new BluetoothAdapter.LeScanCallback() {
 
-        @Override
-        public void onLeScan(final BluetoothDevice device, int rssi, byte[] scanRecord) {
-            runOnUiThread(new Runnable() {
                 @Override
-                public void run() {
-                   devices.add(device);
-                    mLeDeviceListAdapter.notifyDataSetChanged();
+                public void onLeScan(final BluetoothDevice device, int rssi, byte[] scanRecord) {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (!devices.contains(device))
+                                devices.add(device);
+                            mLeDeviceListAdapter.notifyDataSetChanged();
+                        }
+                    });
                 }
-            });
-        }
-    };
+            };
 
     private void displayGattServices(List<BluetoothGattService> gattServices) {
         if (gattServices == null) return;
 
         for (BluetoothGattService gattService : gattServices) {
-        	//-----Service的字段信息-----//
-        	int type = gattService.getType();
-            Log.e(TAG,"-->service type:"+Utils.getServiceType(type));
-            Log.e(TAG,"-->includedServices size:"+gattService.getIncludedServices().size());
-            Log.e(TAG,"-->service uuid:"+gattService.getUuid());
+            //-----Service的字段信息-----//
+            int type = gattService.getType();
+            Log.e(TAG, "-->service type:" + Utils.getServiceType(type));
+            Log.e(TAG, "-->includedServices size:" + gattService.getIncludedServices().size());
+            Log.e(TAG, "-->service uuid:" + gattService.getUuid());
 
             //-----Characteristics的字段信息-----//
-            List<BluetoothGattCharacteristic> gattCharacteristics =gattService.getCharacteristics();
-            for (final BluetoothGattCharacteristic  gattCharacteristic: gattCharacteristics) {
-                Log.e(TAG,"---->char uuid:"+gattCharacteristic.getUuid());
+            List<BluetoothGattCharacteristic> gattCharacteristics = gattService.getCharacteristics();
+            for (final BluetoothGattCharacteristic gattCharacteristic : gattCharacteristics) {
+                Log.e(TAG, "---->char uuid:" + gattCharacteristic.getUuid());
 
                 int permission = gattCharacteristic.getPermissions();
-                Log.e(TAG,"---->char permission:"+Utils.getCharPermission(permission));
+                Log.e(TAG, "---->char permission:" + Utils.getCharPermission(permission));
 
                 int property = gattCharacteristic.getProperties();
-                Log.e(TAG,"---->char property:"+Utils.getCharPropertie(property));
+                Log.e(TAG, "---->char property:" + Utils.getCharPropertie(property));
 
                 byte[] data = gattCharacteristic.getValue();
-        		if (data != null && data.length > 0) {
-        			Log.e(TAG,"---->char value:"+new String(data));
-        		}
-
-        	/*	//UUID_KEY_DATA是可以跟蓝牙模块串口通信的Characteristic
-        		if(gattCharacteristic.getUuid().toString().equals(UUID_KEY_DATA)){        			
-        			//测试读取当前Characteristic数据，会触发mOnDataAvailable.onCharacteristicRead()
-        			mHandler.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                        	mBLE.readCharacteristic(gattCharacteristic);
-                        }
-                    }, 500);
-        			
-        			//接受Characteristic被写的通知,收到蓝牙模块的数据后会触发mOnDataAvailable.onCharacteristicWrite()
-        			mBLE.setCharacteristicNotification(gattCharacteristic, true);
-        			//设置数据内容
-        			gattCharacteristic.setValue(new byte[]{0x55, 0x01});
-        			//往蓝牙模块写入数据
-        			mBLE.writeCharacteristic(gattCharacteristic);
-                }*/
-
-               /* // 读取操作
-                if (gattCharacteristic.getUuid().toString().equals(UUID_KEY_GET)) {
-                    mBLE.readCharacteristic(gattCharacteristic);
+                if (data != null && data.length > 0) {
+                    Log.e(TAG, "---->char value:" + new String(data));
                 }
-        		
-        		//-----Descriptors的字段信息-----//
-				List<BluetoothGattDescriptor> gattDescriptors = gattCharacteristic.getDescriptors();
-				for (BluetoothGattDescriptor gattDescriptor : gattDescriptors) {
-					Log.e(TAG, "-------->desc uuid:" + gattDescriptor.getUuid());
-					int descPermission = gattDescriptor.getPermissions();
-					Log.e(TAG,"-------->desc permission:"+ Utils.getDescPermission(descPermission));
-					
-					byte[] desData = gattDescriptor.getValue();
-					if (desData != null && desData.length > 0) {
-						Log.e(TAG, "-------->desc value:"+ new String(desData));
-					}
-        		 }*/
+
             }
         }//
 
@@ -392,7 +414,7 @@ public class DeviceScanActivity extends Activity implements AdapterView.OnItemCl
     /**
      * 设置并发送数据
      */
-    private  void setSetting() {
+    private void setSetting() {
         BluetoothGattService sendService = bluetoothGatt.getService(UUID.fromString(UUID_SERVICE));
         enableNotification(true, sendService);
         LogUtils.i("服务是否为null---->" + (sendService == null));
@@ -400,15 +422,12 @@ public class DeviceScanActivity extends Activity implements AdapterView.OnItemCl
         if (sendService != null) {
             BluetoothGattCharacteristic sendCharacteristic = sendService.getCharacteristic(UUID.fromString(UUID_KEY_DATA));
 
-            LogUtils.i("发送的串口是否为Null--->" + (sendCharacteristic==null));
+            LogUtils.i("发送的串口是否为Null--->" + (sendCharacteristic == null));
             if (sendCharacteristic != null) {
 
-                    sendCharacteristic.setValue(Utils.getHexBytes("5506"));
+                sendCharacteristic.setValue(Utils.getHexBytes("5501"));
+                bluetoothGatt.writeCharacteristic(sendCharacteristic);
 
-                LogUtils.i("发送的数据长度为---->" + Utils.hexStr2ByteArray("5506").length);
-
-                    boolean is = bluetoothGatt.writeCharacteristic(sendCharacteristic);
-                    LogUtils.i("发送状态---->" + is);
 
             }
         }
@@ -424,19 +443,18 @@ public class DeviceScanActivity extends Activity implements AdapterView.OnItemCl
             mScanning = false;
         }
 
-//        mBLE.connect(device.getAddress());
-
         bluetoothGatt = device.connectGatt(DeviceScanActivity.this, false, gattCallback);
     }
 
 
     /**
-     *  set notification
+     * set notification
+     *
      * @param enable
      * @param service
      * @return
      */
-    private boolean enableNotification(boolean enable,BluetoothGattService service) {
+    private boolean enableNotification(boolean enable, BluetoothGattService service) {
 
         BluetoothGattCharacteristic characteristic = service.getCharacteristic(UUID.fromString(UUID_KEY_GET));
 
@@ -459,5 +477,104 @@ public class DeviceScanActivity extends Activity implements AdapterView.OnItemCl
         }
         return bluetoothGatt.writeDescriptor(clientConfig);
     }
+
+    /**
+     * 获取历史数据
+     */
+    private void getHistoryData(int count) {
+        LogUtils.i("获得数量为---->" + count);
+        BluetoothGattService sendService = bluetoothGatt.getService(UUID.fromString(UUID_SERVICE));
+        enableNotification(true, sendService);
+        if (sendService != null) {
+            BluetoothGattCharacteristic sendCharacteristic = sendService.getCharacteristic(UUID.fromString(UUID_KEY_DATA));
+            if (sendCharacteristic != null) {
+                sendCharacteristic.setValue(Utils.getHexBytes("5502" + Utils.addZeroForNum(Integer.toHexString(count), 2) + "00"));
+                bluetoothGatt.writeCharacteristic(sendCharacteristic);
+            }
+        }
+
+    }
+
+    /**
+     * 自定义定时器类
+     */
+
+
+    MyTimerTask timerTask = new MyTimerTask();
+    Timer searchTimer = new Timer(true);
+    Timer gethistoryTimer = new Timer(true);
+
+
+    Handler searchHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+
+            switch (msg.what) {
+                case 1:
+                    searchTimer.cancel();// 取消定时操作
+
+                    break;
+
+                case 2:
+
+                    break;
+            }
+        }
+    };
+
+
+    private boolean isPrepare = false;
+
+    private class MyTimerTask extends TimerTask {
+        @Override
+        public void run() {
+            Message message = new Message();
+            if (isPrepare) {
+                message.what = 1;// 表示可以传输数据
+
+
+            } else {
+                message.what = 2;// 表示不可以传输数据
+                setSetting();
+            }
+
+            searchHandler.sendMessage(message);
+        }
+    }
+
+
+    private int count = 0;
+
+    private class GetHistoryTask extends TimerTask {
+
+        @Override
+        public void run() {
+            if (count != 0) {
+                LogUtils.i("获取历史执行---------->" + count);
+                getHistoryData(count);
+                count = count - 1;
+            } else {
+                gethistoryTimer.cancel();
+            }
+        }
+    }
+
+
+    /**
+     * 删除记录
+     */
+    private void deleteRecord() {
+        BluetoothGattService sendService = bluetoothGatt.getService(UUID.fromString(UUID_SERVICE));
+        enableNotification(true, sendService);
+        if (sendService != null) {
+            BluetoothGattCharacteristic sendCharacteristic = sendService.getCharacteristic(UUID.fromString(UUID_KEY_DATA));
+            if (sendCharacteristic != null) {
+                sendCharacteristic.setValue(Utils.getHexBytes("5503"));
+                bluetoothGatt.writeCharacteristic(sendCharacteristic);
+            }
+        }
+    }
+
 
 }
