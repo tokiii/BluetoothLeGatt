@@ -1,36 +1,24 @@
 package com.example.bluetooth.le;
 
-import java.util.ArrayList;
-
 import android.app.Activity;
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 
-public class LeDeviceListAdapter extends BaseAdapter {
+import java.util.ArrayList;
 
-	// Adapter for holding devices found through scanning.
-
+public class BLEDeviceListAdapter extends BaseAdapter {
 	private ArrayList<BluetoothDevice> mLeDevices;
 	private LayoutInflater mInflator;
 	private Activity mContext;
-
-	public LeDeviceListAdapter(Activity c, ArrayList<BluetoothDevice> devices) {
+	public BLEDeviceListAdapter(Activity c, ArrayList<BluetoothDevice> devices) {
 		super();
 		mContext = c;
 		this.mLeDevices = devices;
 		mInflator = mContext.getLayoutInflater();
-	}
-
-	public void addDevice(BluetoothDevice device) {
-		if (!mLeDevices.contains(device)) {
-			mLeDevices.add(device);
-		}
 	}
 
 	public BluetoothDevice getDevice(int position) {

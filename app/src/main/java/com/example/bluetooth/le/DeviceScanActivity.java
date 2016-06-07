@@ -51,13 +51,13 @@ import java.util.UUID;
  */
 public class DeviceScanActivity extends Activity implements AdapterView.OnItemClickListener {
     private final static String TAG = "blueQQQQ";
-    private final static String UUID_KEY_DATA = "0000ff0b-0000-1000-8000-00805f9b34fb";
-    private final static String UUID_KEY_GET = "0000ff0a-0000-1000-8000-00805f9b34fb";
-    private final static String UUID_SERVICE = "0000fff0-0000-1000-8000-00805f9b34fb";
+    private final static String UUID_KEY_DATA = "0000ff0b-0000-1000-8000-00805f9b34fb";// 发送的UUID
+    private final static String UUID_KEY_GET = "0000ff0a-0000-1000-8000-00805f9b34fb"; //获取数据的UUID
+    private final static String UUID_SERVICE = "0000fff0-0000-1000-8000-00805f9b34fb"; //服务service
 
     private boolean mesured = false;
 
-    private LeDeviceListAdapter mLeDeviceListAdapter;
+    private BLEDeviceListAdapter mLeDeviceListAdapter;
     /**
      * 搜索BLE终端
      */
@@ -83,13 +83,11 @@ public class DeviceScanActivity extends Activity implements AdapterView.OnItemCl
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        getActionBar().setTitle(R.string.title_devices);
         setContentView(R.layout.activity_main);
         listView = (ListView) findViewById(R.id.listView);
         et_code = (EditText) findViewById(R.id.et_code);
         bt_send = (Button) findViewById(R.id.btn_send);
         devices = new ArrayList<BluetoothDevice>();
-
         listView.setOnItemClickListener(this);
         bt_send.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -168,7 +166,6 @@ public class DeviceScanActivity extends Activity implements AdapterView.OnItemCl
                 }
 
             }
-
 
 
             // 接收每个包
@@ -306,7 +303,7 @@ public class DeviceScanActivity extends Activity implements AdapterView.OnItemCl
         super.onResume();
 
         // Initializes list view adapter.
-        mLeDeviceListAdapter = new LeDeviceListAdapter(this, devices);
+        mLeDeviceListAdapter = new BLEDeviceListAdapter(this, devices);
 
         listView.setAdapter(mLeDeviceListAdapter);
         scanLeDevice(true);
@@ -346,7 +343,6 @@ public class DeviceScanActivity extends Activity implements AdapterView.OnItemCl
             mScanning = false;
             mBluetoothAdapter.stopLeScan(mLeScanCallback);
         }
-        invalidateOptionsMenu();
     }
 
     /**
@@ -443,7 +439,12 @@ public class DeviceScanActivity extends Activity implements AdapterView.OnItemCl
             mScanning = false;
         }
 
-        bluetoothGatt = device.connectGatt(DeviceScanActivity.this, false, gattCallback);
+        if (!bluetoothGatt.connect()) {
+            bluetoothGatt = device.connectGatt(DeviceScanActivity.this, false, gattCallback);
+        } else {
+
+        }
+
     }
 
 
@@ -556,6 +557,7 @@ public class DeviceScanActivity extends Activity implements AdapterView.OnItemCl
                 count = count - 1;
             } else {
                 gethistoryTimer.cancel();
+                deleteRecord();
             }
         }
     }
